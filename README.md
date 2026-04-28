@@ -76,5 +76,5 @@ pnpm dev
 
 | Rol | Contacto |
 |-----|----------|
-| Product Owner / Dev | [@Maigelll](https://github.com/Maigelll) |
-| Colaborador / Dev | [@steban](https://github.com/steban) |
+| Product Owner / Dev | [@steban](https://github.com/steban) |
+| Colaborador / Dev | [[@Maigelll](https://github.com/Maigelll) |
