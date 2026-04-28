@@ -5,7 +5,7 @@ import { PrismaService } from '../../common/prisma/prisma.service';
 export class WarehouseService {
   constructor(private prisma: PrismaService) {}
 
-  async getPendingOrders(storeId: string) {
+  async getPendingOrders(storeId: string): Promise<any[]> {
     return this.prisma.interStoreOrder.findMany({
       where: {
         fulfillingStoreId: storeId,

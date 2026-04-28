@@ -17,7 +17,7 @@ export class WarehouseController {
   @Get('orders/pending')
   @Roles('WAREHOUSE_OP', 'WAREHOUSE_MANAGER', 'TENANT_ADMIN')
   @ApiOperation({ summary: 'Pedidos pendientes de picking en bodega' })
-  getPendingOrders(@CurrentUser() user: AuthUser) {
+  getPendingOrders(@CurrentUser() user: AuthUser): Promise<any[]> {
     return this.warehouseService.getPendingOrders(user.storeId!);
   }
 

@@ -27,12 +27,12 @@ export class UsersService {
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
     return this.prisma.user.create({
-      data: { tenantId, passwordHash, ...dto, password: undefined },
+      data: { tenantId, passwordHash, email: dto.email, firstName: dto.firstName, lastName: dto.lastName, role: dto.role, storeId: dto.storeId },
       select: { id: true, email: true, firstName: true, lastName: true, role: true, storeId: true },
     });
   }
 
-  async update(tenantId: string, id: string, dto: any) {
+  async update(tenantId: string, id: string, dto: any): Promise<any> {
     const user = await this.prisma.user.findFirst({ where: { id, tenantId } });
     if (!user) throw new NotFoundException('Usuario no encontrado');
 

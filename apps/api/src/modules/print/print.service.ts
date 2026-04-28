@@ -36,7 +36,7 @@ export class PrintService {
           storeId: order.fulfillingStoreId,
           orderId: order.id,
           jobType: 'PICKING',
-          payload: { escposBase64, metadata: payload },
+          payload: JSON.parse(JSON.stringify({ escposBase64, metadata: payload })),
         },
       });
 
