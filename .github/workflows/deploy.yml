@@ -30,6 +30,7 @@ jobs:
             pnpm install
             pnpm db:generate
             pnpm db:migrate
+            export NEXT_PUBLIC_API_URL="http://148.230.88.92:4000/api/v1"
             pnpm build
             
             # 5. Reiniciar las aplicaciones con PM2
