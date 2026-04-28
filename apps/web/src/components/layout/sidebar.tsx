@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Package, ShoppingCart, Warehouse,
-  ArrowLeftRight, Users, Settings, ShoppingBag, LogOut,
+  ArrowLeftRight, Users, Settings, LogOut,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
@@ -28,32 +28,55 @@ export function Sidebar() {
   );
 
   return (
-    <aside className="w-64 min-h-screen bg-gray-900 flex flex-col">
+    <aside
+      className="w-64 min-h-screen flex flex-col"
+      style={{ background: 'linear-gradient(180deg, #0d1040 0%, #1a0d50 60%, #2d1060 100%)' }}
+    >
       {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-800">
-        <div className="w-9 h-9 bg-red-600 rounded-lg flex items-center justify-center flex-shrink-0">
-          <ShoppingBag className="w-5 h-5 text-white" />
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-white/10">
+        {/* Mini círculo azul del logo */}
+        <div
+          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg"
+          style={{
+            background: 'radial-gradient(circle at 40% 35%, #2a7ee8 0%, #1a5fc4 55%, #0d3a8a 100%)',
+            boxShadow: '0 0 12px rgba(26,95,196,0.5)',
+          }}
+        >
+          <span className="text-white font-black text-xs tracking-tight">DS</span>
         </div>
         <div>
-          <p className="text-white font-bold text-sm leading-tight">DannyShoes</p>
-          <p className="text-gray-400 text-xs">{user?.role?.replace('_', ' ')}</p>
+          <p
+            className="font-black text-sm leading-tight"
+            style={{
+              background: 'linear-gradient(90deg, #ffffff 30%, #e879f9 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            DANNY<span style={{ WebkitTextFillColor: '#e879f9' }}>Shoes</span>
+          </p>
+          <p className="text-purple-300/60 text-xs">{user?.role?.replace(/_/g, ' ')}</p>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-0.5">
         {visibleItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+          const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href + '/'));
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
                 isActive
-                  ? 'bg-red-600 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-800',
+                  ? 'text-white shadow-md'
+                  : 'text-purple-200/70 hover:text-white hover:bg-white/8',
               )}
+              style={isActive ? {
+                background: 'linear-gradient(90deg, #6b2fc6 0%, #c62fc6 100%)',
+                boxShadow: '0 2px 12px rgba(198,47,198,0.35)',
+              } : undefined}
             >
               <item.icon className="w-4 h-4 flex-shrink-0" />
               {item.label}
@@ -62,20 +85,23 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* User */}
-      <div className="px-3 py-4 border-t border-gray-800">
+      {/* User footer */}
+      <div className="px-3 py-4 border-t border-white/10">
         <div className="flex items-center gap-3 px-3 py-2 mb-1">
-          <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, #6b2fc6 0%, #c62fc6 100%)' }}
+          >
             {user?.firstName?.[0]}{user?.lastName?.[0]}
           </div>
           <div className="min-w-0">
             <p className="text-white text-sm font-medium truncate">{user?.firstName} {user?.lastName}</p>
-            <p className="text-gray-500 text-xs truncate">{user?.email}</p>
+            <p className="text-purple-300/60 text-xs truncate">{user?.email}</p>
           </div>
         </div>
         <button
           onClick={logout}
-          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-purple-200/60 hover:text-white hover:bg-white/8 transition-colors"
         >
           <LogOut className="w-4 h-4" />
           Cerrar sesión

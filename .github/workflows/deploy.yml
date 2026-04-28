@@ -1,0 +1,37 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main # O master, dependiendo de cómo se llame tu rama principal
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            # 1. Ir a la carpeta del proyecto (la crearemos en el VPS)
+            cd /root/dannyshoes
+            
+            # 2. Bajar los últimos cambios de GitHub
+            git pull origin main
+            
+            # 3. Levantar las bases de datos (Postgres y Redis) en Docker
+            docker-compose up -d
+            
+            # 4. Instalar dependencias y construir el proyecto
+            pnpm install
+            pnpm db:generate
+            pnpm db:migrate
+            pnpm build
+            
+            # 5. Reiniciar las aplicaciones con PM2
+            pm2 startOrReload ecosystem.config.js
+            pm2 save

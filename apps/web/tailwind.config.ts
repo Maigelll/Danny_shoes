@@ -39,13 +39,19 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        /* Paleta extraída del logo DannyShoes */
         brand: {
-          50: '#fef2f2',
-          100: '#fee2e2',
-          500: '#ef4444',
-          600: '#dc2626',
-          700: '#b91c1c',
-          900: '#7f1d1d',
+          navy:    '#0d1040',   /* fondo oscuro del logo */
+          purple:  '#6b2fc6',   /* morado principal */
+          magenta: '#c62fc6',   /* texto "shoes" */
+          blue:    '#1a5fc4',   /* círculo azul */
+          50:  '#f5f0ff',
+          100: '#ede0ff',
+          200: '#d4b3ff',
+          500: '#7b29c8',
+          600: '#6b2fc6',
+          700: '#5522a8',
+          900: '#2a0e6e',
         },
       },
       borderRadius: {
