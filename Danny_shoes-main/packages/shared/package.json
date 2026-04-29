@@ -1,0 +1,17 @@
+{
+  "name": "@dannyshoes/shared",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./src/index.js",
+      "types": "./src/index.d.ts"
+    }
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "@types/node": "^22.0.0"
+  }
+}

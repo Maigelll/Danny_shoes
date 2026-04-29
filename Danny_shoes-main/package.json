@@ -1,0 +1,27 @@
+{
+  "name": "dannyshoes",
+  "private": true,
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "db:migrate": "pnpm --filter @dannyshoes/database migrate:dev",
+    "db:generate": "pnpm --filter @dannyshoes/database generate",
+    "db:studio": "pnpm --filter @dannyshoes/database studio",
+    "db:seed": "pnpm --filter @dannyshoes/database seed",
+    "db:reset": "pnpm --filter @dannyshoes/database migrate:reset"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.6.3",
+    "@types/node": "^22.0.0",
+    "prettier": "^3.3.3",
+    "eslint": "^9.0.0"
+  },
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  }
+}

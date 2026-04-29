@@ -1,0 +1,410 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── ENUMS ────────────────────────────────────────────────────────────────────
+
+enum Plan {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum StoreType {
+  WAREHOUSE
+  RETAIL
+  OUTLET
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  TENANT_ADMIN
+  STORE_MANAGER
+  WAREHOUSE_MANAGER
+  CASHIER
+  WAREHOUSE_OP
+  VIEWER
+}
+
+enum MovementType {
+  SALE
+  PURCHASE
+  TRANSFER_IN
+  TRANSFER_OUT
+  RETURN
+  SAMPLE
+  ADJUSTMENT
+  PICKING
+  RESERVED
+  RESERVATION_RELEASED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PICKING
+  SHIPPED
+  RECEIVED
+  CANCELLED
+}
+
+enum InvoiceType {
+  CASH
+  CREDIT
+  ELECTRONIC
+}
+
+enum SaleStatus {
+  OPEN
+  COMPLETED
+  VOIDED
+  RETURNED
+}
+
+enum RegisterStatus {
+  OPEN
+  CLOSED
+}
+
+enum PrintJobType {
+  PICKING
+  TRANSFER
+  INVOICE
+  LABEL
+  RECEIPT
+}
+
+enum PrintJobStatus {
+  QUEUED
+  SENT
+  PRINTED
+  FAILED
+}
+
+// ─── MODELS ───────────────────────────────────────────────────────────────────
+
+model Tenant {
+  id        String   @id @default(uuid())
+  slug      String   @unique
+  name      String
+  plan      Plan     @default(STARTER)
+  settings  Json     @default("{}")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stores           Store[]
+  users            User[]
+  products         Product[]
+  suppliers        Supplier[]
+  interStoreOrders InterStoreOrder[]
+  printJobs        PrintJob[]
+
+  @@map("tenants")
+}
+
+model Store {
+  id                 String    @id @default(uuid())
+  tenantId           String
+  code               String
+  name               String
+  type               StoreType @default(RETAIL)
+  address            String?
+  phone              String?
+  isCentralWarehouse Boolean   @default(false)
+  printerConfig      Json      @default("{}")
+  isActive           Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  tenant           Tenant              @relation(fields: [tenantId], references: [id])
+  users            User[]
+  stock            Stock[]
+  locations        InventoryLocation[]
+  printJobs        PrintJob[]
+  requestingOrders InterStoreOrder[]   @relation("RequestingStore")
+  fulfillingOrders InterStoreOrder[]   @relation("FulfillingStore")
+  sales            Sale[]
+  cashRegisters    CashRegister[]
+  movementsFrom    StockMovement[]     @relation("MovementFromStore")
+  movementsTo      StockMovement[]     @relation("MovementToStore")
+
+  @@unique([tenantId, code])
+  @@map("stores")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  tenantId     String
+  storeId      String?
+  email        String    @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         UserRole  @default(CASHIER)
+  permissions  Json      @default("{}")
+  isActive     Boolean   @default(true)
+  lastLogin    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  tenant         Tenant            @relation(fields: [tenantId], references: [id])
+  store          Store?            @relation(fields: [storeId], references: [id])
+  sales          Sale[]
+  cashRegisters  CashRegister[]
+  pickedOrders   InterStoreOrder[] @relation("PickedByUser")
+  createdOrders  InterStoreOrder[] @relation("CreatedByUser")
+  stockMovements StockMovement[]
+
+  @@map("users")
+}
+
+model Supplier {
+  id           String   @id @default(uuid())
+  tenantId     String
+  name         String
+  nitRut       String?
+  contactEmail String?
+  phone        String?
+  paymentTerms Json     @default("{}")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
+  products Product[]
+
+  @@map("suppliers")
+}
+
+model Product {
+  id           String   @id @default(uuid())
+  tenantId     String
+  reference    String
+  internalCode String?
+  name         String
+  brand        String?
+  color        String?
+  material     String?
+  description  String?
+  costPrice    Decimal  @db.Decimal(10, 2)
+  salePrice    Decimal  @db.Decimal(10, 2)
+  supplierId   String?
+  attributes   Json     @default("{}")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant   Tenant      @relation(fields: [tenantId], references: [id])
+  supplier Supplier?   @relation(fields: [supplierId], references: [id])
+  variants SkuVariant[]
+
+  @@unique([tenantId, reference])
+  @@map("products")
+}
+
+model SkuVariant {
+  id            String   @id @default(uuid())
+  productId     String
+  size          String
+  barcode       String?  @unique
+  minStockAlert Int      @default(5)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  product        Product            @relation(fields: [productId], references: [id])
+  stock          Stock[]
+  orderItems     OrderItem[]
+  saleItems      SaleItem[]
+  stockMovements StockMovement[]
+
+  @@unique([productId, size])
+  @@map("sku_variants")
+}
+
+model InventoryLocation {
+  id       String @id @default(uuid())
+  storeId  String
+  aisle    String
+  rack     String
+  level    String
+  bin      String?
+  fullCode String
+
+  store          Store             @relation(fields: [storeId], references: [id])
+  stock          Stock[]
+  orderItems     OrderItem[]
+  stockMovements StockMovement[]
+
+  @@unique([storeId, fullCode])
+  @@map("inventory_locations")
+}
+
+model Stock {
+  id               String   @id @default(uuid())
+  skuId            String
+  storeId          String
+  locationId       String?
+  quantity         Int      @default(0)
+  reservedQuantity Int      @default(0)
+  updatedAt        DateTime @updatedAt
+
+  sku      SkuVariant         @relation(fields: [skuId], references: [id])
+  store    Store              @relation(fields: [storeId], references: [id])
+  location InventoryLocation? @relation(fields: [locationId], references: [id])
+
+  @@unique([skuId, storeId])
+  @@map("stock")
+}
+
+model StockMovement {
+  id               String       @id @default(uuid())
+  tenantId         String
+  skuId            String
+  fromStoreId      String?
+  toStoreId        String?
+  locationId       String?
+  movementType     MovementType
+  quantity         Int
+  referenceDocId   String?
+  referenceDocType String?
+  createdById      String
+  metadata         Json         @default("{}")
+  createdAt        DateTime     @default(now())
+
+  sku       SkuVariant         @relation(fields: [skuId], references: [id])
+  fromStore Store?             @relation("MovementFromStore", fields: [fromStoreId], references: [id])
+  toStore   Store?             @relation("MovementToStore", fields: [toStoreId], references: [id])
+  location  InventoryLocation? @relation(fields: [locationId], references: [id])
+  createdBy User               @relation(fields: [createdById], references: [id])
+
+  @@map("stock_movements")
+}
+
+model InterStoreOrder {
+  id                String      @id @default(uuid())
+  tenantId          String
+  requestingStoreId String
+  fulfillingStoreId String
+  status            OrderStatus @default(PENDING)
+  createdById       String
+  pickedById        String?
+  notes             String?
+  requestedAt       DateTime    @default(now())
+  confirmedAt       DateTime?
+  pickedAt          DateTime?
+  shippedAt         DateTime?
+  receivedAt        DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  tenant           Tenant      @relation(fields: [tenantId], references: [id])
+  requestingStore  Store       @relation("RequestingStore", fields: [requestingStoreId], references: [id])
+  fulfillingStore  Store       @relation("FulfillingStore", fields: [fulfillingStoreId], references: [id])
+  createdBy        User        @relation("CreatedByUser", fields: [createdById], references: [id])
+  pickedBy         User?       @relation("PickedByUser", fields: [pickedById], references: [id])
+  items            OrderItem[]
+  printJobs        PrintJob[]
+
+  @@map("inter_store_orders")
+}
+
+model OrderItem {
+  id                String  @id @default(uuid())
+  orderId           String
+  skuId             String
+  locationId        String?
+  quantityRequested Int
+  quantityFulfilled Int     @default(0)
+
+  order    InterStoreOrder    @relation(fields: [orderId], references: [id])
+  sku      SkuVariant         @relation(fields: [skuId], references: [id])
+  location InventoryLocation? @relation(fields: [locationId], references: [id])
+
+  @@map("order_items")
+}
+
+model Sale {
+  id            String     @id @default(uuid())
+  tenantId      String
+  storeId       String
+  cashierId     String
+  customerId    String?
+  invoiceNumber String     @unique
+  invoiceType   InvoiceType @default(CASH)
+  subtotal      Decimal    @db.Decimal(10, 2)
+  discountTotal Decimal    @db.Decimal(10, 2) @default(0)
+  taxTotal      Decimal    @db.Decimal(10, 2) @default(0)
+  total         Decimal    @db.Decimal(10, 2)
+  paymentMethod String
+  status        SaleStatus @default(COMPLETED)
+  notes         String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  store   Store      @relation(fields: [storeId], references: [id])
+  cashier User       @relation(fields: [cashierId], references: [id])
+  items   SaleItem[]
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id        String  @id @default(uuid())
+  saleId    String
+  skuId     String
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)
+  discount  Decimal @db.Decimal(10, 2) @default(0)
+  lineTotal Decimal @db.Decimal(10, 2)
+
+  sale Sale       @relation(fields: [saleId], references: [id])
+  sku  SkuVariant @relation(fields: [skuId], references: [id])
+
+  @@map("sale_items")
+}
+
+model CashRegister {
+  id             String         @id @default(uuid())
+  storeId        String
+  userId         String
+  openingAmount  Decimal        @db.Decimal(10, 2)
+  closingAmount  Decimal?       @db.Decimal(10, 2)
+  expectedAmount Decimal?       @db.Decimal(10, 2)
+  difference     Decimal?       @db.Decimal(10, 2)
+  status         RegisterStatus @default(OPEN)
+  denominations  Json           @default("{}")
+  openedAt       DateTime       @default(now())
+  closedAt       DateTime?
+
+  store Store @relation(fields: [storeId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@map("cash_registers")
+}
+
+model PrintJob {
+  id         String         @id @default(uuid())
+  tenantId   String
+  storeId    String
+  orderId    String?
+  jobType    PrintJobType
+  status     PrintJobStatus @default(QUEUED)
+  payload    Json
+  retryCount Int            @default(0)
+  errorMsg   String?
+  createdAt  DateTime       @default(now())
+  printedAt  DateTime?
+
+  tenant Tenant           @relation(fields: [tenantId], references: [id])
+  store  Store            @relation(fields: [storeId], references: [id])
+  order  InterStoreOrder? @relation(fields: [orderId], references: [id])
+
+  @@map("print_jobs")
+}
